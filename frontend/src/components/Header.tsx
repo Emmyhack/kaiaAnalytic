@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, Wifi, WifiOff } from 'lucide-react';
 import { apiService, HealthResponse } from '../services/api';
+import WalletConnection from './WalletConnection';
+import ThemeToggle from './ThemeToggle';
 
 const Header: React.FC = () => {
   const [health, setHealth] = useState<HealthResponse | null>(null);
@@ -43,7 +45,7 @@ const Header: React.FC = () => {
             </div>
           </div>
 
-          {/* Status Indicator */}
+          {/* Status Indicator and Wallet Connection */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               {isOnline ? (
@@ -75,6 +77,12 @@ const Header: React.FC = () => {
                 </span>
               </div>
             )}
+
+            {/* Theme Toggle */}
+            <ThemeToggle />
+
+            {/* Wallet Connection */}
+            <WalletConnection />
           </div>
         </div>
       </div>

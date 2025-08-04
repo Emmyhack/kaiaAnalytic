@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { Web3Provider } from './contexts/Web3Context';
 import Header from './components/Header';
 import SearchBar from './components/SearchBar';
 import NetworkStats from './components/NetworkStats';
 import SearchResults from './components/SearchResults';
+import PortfolioTracker from './components/PortfolioTracker';
 import { 
   apiService, 
   BlockResponse, 
@@ -20,6 +22,7 @@ function App() {
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'search' | 'portfolio'>('search');
 
   const handleSearch = async (query: string, type: 'block' | 'transaction' | 'address') => {
     setSearchLoading(true);
@@ -73,25 +76,55 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-secondary-50">
-      <Header />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero Section */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gradient mb-4">
-            Blockchain Analytics Dashboard
-          </h1>
-          <p className="text-xl text-secondary-600 max-w-3xl mx-auto">
-            Explore and analyze blockchain data with powerful search capabilities. 
-            Search for blocks, transactions, and addresses to get detailed insights.
-          </p>
-        </div>
+    <Web3Provider>
+      <div className="min-h-screen bg-secondary-50">
+        <Header />
+        
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Hero Section */}
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-gradient mb-4">
+              Blockchain Analytics Dashboard
+            </h1>
+            <p className="text-xl text-secondary-600 max-w-3xl mx-auto">
+              Explore and analyze blockchain data with powerful search capabilities. 
+              Search for blocks, transactions, and addresses to get detailed insights.
+            </p>
+          </div>
 
-        {/* Search Section */}
-        <div className="mb-12">
-          <SearchBar onSearch={handleSearch} loading={searchLoading} />
-        </div>
+          {/* Navigation Tabs */}
+          <div className="flex justify-center mb-8">
+            <div className="flex space-x-1 bg-white p-1 rounded-lg border border-secondary-200">
+              <button
+                onClick={() => setActiveTab('search')}
+                className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                  activeTab === 'search'
+                    ? 'bg-primary-600 text-white'
+                    : 'text-secondary-600 hover:text-secondary-900'
+                }`}
+              >
+                Blockchain Explorer
+              </button>
+              <button
+                onClick={() => setActiveTab('portfolio')}
+                className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                  activeTab === 'portfolio'
+                    ? 'bg-primary-600 text-white'
+                    : 'text-secondary-600 hover:text-secondary-900'
+                }`}
+              >
+                Portfolio Tracker
+              </button>
+            </div>
+          </div>
+
+        {/* Content based on active tab */}
+        {activeTab === 'search' ? (
+          <>
+            {/* Search Section */}
+            <div className="mb-12">
+              <SearchBar onSearch={handleSearch} loading={searchLoading} />
+            </div>
 
         {/* Search Results */}
         {searchLoading && (
@@ -137,13 +170,13 @@ function App() {
           </div>
         )}
 
-        {/* Network Statistics */}
-        <div className="mb-8">
-          <NetworkStats />
-        </div>
+            {/* Network Statistics */}
+            <div className="mb-8">
+              <NetworkStats />
+            </div>
 
-        {/* Getting Started Section */}
-        {!searchResult && !searchLoading && !searchError && (
+            {/* Getting Started Section */}
+            {!searchResult && !searchLoading && !searchError && (
           <div className="card">
             <div className="text-center py-12">
               <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -198,6 +231,11 @@ function App() {
             </div>
           </div>
         )}
+          </>
+        ) : (
+          /* Portfolio Tab */
+          <PortfolioTracker />
+        )}
       </main>
 
       {/* Footer */}
@@ -213,8 +251,9 @@ function App() {
           </div>
         </div>
       </footer>
-    </div>
-  );
-}
+        </div>
+      </Web3Provider>
+    );
+  }
 
 export default App;
