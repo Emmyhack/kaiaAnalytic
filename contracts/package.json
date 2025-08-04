@@ -1,7 +1,31 @@
 {
-  "name": "hardhat-project",
+  "name": "kaia-analytics-ai-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for Kaia Analytics AI platform",
+  "scripts": {
+    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "deploy:local": "hardhat ignition deploy ./ignition/modules/Lock.js --network localhost",
+    "node": "hardhat node",
+    "coverage": "hardhat coverage",
+    "clean": "hardhat clean",
+    "size": "hardhat size-contracts"
+  },
+  "keywords": [
+    "blockchain",
+    "ethereum",
+    "smart-contracts",
+    "hardhat",
+    "analytics",
+    "kaia"
+  ],
+  "author": "Kaia Analytics AI Team",
+  "license": "UNLICENSED",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^6.1.0",
     "hardhat": "^2.26.1"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.1"
   }
 }
