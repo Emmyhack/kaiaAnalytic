@@ -11,6 +11,10 @@ A blockchain-based analytics platform built with Go backend and Ethereum smart c
 │   ├── test/         # Contract tests
 │   ├── ignition/     # Deployment modules
 │   └── hardhat.config.js
+├── frontend/         # React TypeScript frontend
+│   ├── src/          # Source code
+│   ├── public/       # Static assets
+│   └── package.json
 ├── README.md
 └── .gitignore
 ```
@@ -38,7 +42,14 @@ cd contracts
 npm install
 ```
 
-### 3. Install Go dependencies
+### 3. Install frontend dependencies
+
+```bash
+cd ../frontend
+npm install
+```
+
+### 4. Install Go dependencies
 
 ```bash
 cd ../backend
@@ -73,6 +84,23 @@ npx hardhat ignition deploy ./ignition/modules/Lock.js --network localhost
 - Gas optimization reporting
 - Deployment automation with Hardhat Ignition
 
+## Frontend
+
+The React TypeScript frontend provides a modern web interface for blockchain analytics.
+
+### Running the Frontend
+
+```bash
+cd frontend
+npm start
+```
+
+The frontend will be available at `http://localhost:3000` and includes:
+- Interactive blockchain data search
+- Real-time network statistics
+- Responsive dashboard design
+- Block, transaction, and address exploration
+
 ## Backend
 
 The Go backend is designed to provide analytics services for blockchain data.
@@ -94,6 +122,9 @@ cd contracts && npx hardhat test
 
 # Go tests
 cd backend && go test ./...
+
+# Frontend tests
+cd frontend && npm test
 ```
 
 ### Code Quality
