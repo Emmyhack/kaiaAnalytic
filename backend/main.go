@@ -14,20 +14,31 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
+
+	"kaia-analytics-ai/services"
 )
 
 // App represents the main application
 type App struct {
-	router    *gin.Engine
-	ethClient *ethclient.Client
-	logger    *logrus.Logger
+	router          *gin.Engine
+	ethClient       *ethclient.Client
+	logger          *logrus.Logger
+	dataCollector   *services.DataCollector
+	analyticsEngine *services.AnalyticsEngine
+	chatEngine      *services.ChatEngine
 }
 
 // Config holds application configuration
 type Config struct {
-	Port        string
-	EthNodeURL  string
-	Environment string
+	Port             string
+	EthNodeURL       string
+	Environment      string
+	OpenAIAPIKey     string
+	KaiascanAPIKey   string
+	KaiascanBaseURL  string
+	CoinGeckoAPIKey  string
+	CoinGeckoBaseURL string
+	ActionContract   string
 }
 
 func main() {
@@ -51,9 +62,15 @@ func main() {
 
 	// Load configuration
 	config := &Config{
-		Port:        getEnvOrDefault("PORT", "8080"),
-		EthNodeURL:  getEnvOrDefault("ETH_NODE_URL", "https://mainnet.infura.io/v3/your-project-id"),
-		Environment: getEnvOrDefault("ENVIRONMENT", "development"),
+		Port:             getEnvOrDefault("PORT", "8080"),
+		EthNodeURL:       getEnvOrDefault("ETH_NODE_URL", "https://public-en-cypress.klaytn.net"),
+		Environment:      getEnvOrDefault("ENVIRONMENT", "development"),
+		OpenAIAPIKey:     os.Getenv("OPENAI_API_KEY"),
+		KaiascanAPIKey:   os.Getenv("KAIASCAN_API_KEY"),
+		KaiascanBaseURL:  getEnvOrDefault("KAIASCAN_BASE_URL", "https://api.kaiascan.io"),
+		CoinGeckoAPIKey:  os.Getenv("COINGECKO_API_KEY"),
+		CoinGeckoBaseURL: getEnvOrDefault("COINGECKO_BASE_URL", "https://api.coingecko.com/api/v3"),
+		ActionContract:   getEnvOrDefault("ACTION_CONTRACT", "0x0000000000000000000000000000000000000000"),
 	}
 
 	// Initialize Ethereum client
@@ -63,11 +80,38 @@ func main() {
 	}
 	defer ethClient.Close()
 
+	// Initialize data collector
+	dataConfig := &services.DataConfig{
+		KaiascanAPIKey:   config.KaiascanAPIKey,
+		KaiascanBaseURL:  config.KaiascanBaseURL,
+		CoinGeckoAPIKey:  config.CoinGeckoAPIKey,
+		CoinGeckoBaseURL: config.CoinGeckoBaseURL,
+		KaiaRPCURL:       config.EthNodeURL,
+		CacheTimeout:     15 * time.Minute,
+		RateLimitDelay:   1 * time.Second,
+	}
+	dataCollector := services.NewDataCollector(logger, ethClient, dataConfig)
+
+	// Initialize analytics engine
+	analyticsEngine, err := services.NewAnalyticsEngine(logger, dataCollector, config.OpenAIAPIKey)
+	if err != nil {
+		logger.WithError(err).Fatal("Failed to initialize analytics engine")
+	}
+
+	// Initialize chat engine
+	chatEngine, err := services.NewChatEngine(logger, analyticsEngine, dataCollector, config.ActionContract, config.OpenAIAPIKey)
+	if err != nil {
+		logger.WithError(err).Fatal("Failed to initialize chat engine")
+	}
+
 	// Initialize application
 	app := &App{
-		router:    gin.New(),
-		ethClient: ethClient,
-		logger:    logger,
+		router:          gin.New(),
+		ethClient:       ethClient,
+		logger:          logger,
+		dataCollector:   dataCollector,
+		analyticsEngine: analyticsEngine,
+		chatEngine:      chatEngine,
 	}
 
 	// Setup middleware
@@ -117,6 +161,9 @@ func (a *App) setupRoutes() {
 	// Health check endpoint
 	a.router.GET("/health", a.healthCheck)
 
+	// WebSocket endpoint for chat
+	a.router.GET("/ws/chat", a.chatEngine.HandleWebSocket)
+
 	// API v1 routes
 	v1 := a.router.Group("/api/v1")
 	{
@@ -128,6 +175,18 @@ func (a *App) setupRoutes() {
 		
 		// Contract analytics endpoints
 		v1.GET("/contract/:address/info", a.getContractInfo)
+		
+		// KaiaAnalyticsAI specific endpoints
+		v1.GET("/kaia/network/stats", a.getKaiaNetworkStats)
+		v1.GET("/analytics/yield", a.getYieldAnalytics)
+		v1.GET("/analytics/trade/:pair", a.getTradeAnalysis)
+		v1.GET("/analytics/governance/:proposalId", a.getGovernanceAnalysis)
+		v1.GET("/price/:symbol", a.getTokenPrice)
+		v1.GET("/historical/:pair", a.getHistoricalPrices)
+		
+		// Chat endpoints
+		v1.POST("/chat/query", a.processChatQuery)
+		v1.GET("/chat/history/:userId", a.getChatHistory)
 	}
 }
 
@@ -161,6 +220,17 @@ func (a *App) start(port string) {
 	}
 
 	a.logger.Info("Server exited")
+	
+	// Cleanup services
+	if a.chatEngine != nil {
+		a.chatEngine.Close()
+	}
+	if a.analyticsEngine != nil {
+		a.analyticsEngine.Close()
+	}
+	if a.dataCollector != nil {
+		a.dataCollector.Close()
+	}
 }
 
 func getEnvOrDefault(key, defaultValue string) string {
