@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  # Backend API
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_ADDRESS=:8080
+      - LOG_LEVEL=info
+      - KAIA_RPC_URL=https://testnet-rpc.kaia.network
+      - KAIA_CHAIN_ID=1337
+      - CONTRACT_ANALYTICS_REGISTRY=0x1234567890123456789012345678901234567890
+      - CONTRACT_DATA=0x2345678901234567890123456789012345678901
+      - CONTRACT_SUBSCRIPTION=0x3456789012345678901234567890123456789012
+      - CONTRACT_ACTION=0x4567890123456789012345678901234567890123
+      - KAIA_API_KEY=demo_key
+      - COINGECKO_URL=https://api.coingecko.com/api/v3
+      - ANALYTICS_WORKER_POOL_SIZE=10
+      - ANALYTICS_UPDATE_INTERVAL=30s
+      - DATA_COLLECTION_INTERVAL=1s
+      - CHAT_MAX_CONNECTIONS=1000
+      - JWT_SECRET=your-secret-key-here
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend Dashboard
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8080
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+      - frontend
+    restart: unless-stopped
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL for data storage (optional)
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=kaia_analytics
+      - POSTGRES_USER=kaia_user
+      - POSTGRES_PASSWORD=kaia_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kaia_user -d kaia_analytics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  redis_data:
+  postgres_data:
+
+networks:
+  default:
+    name: kaia-analytics-network
