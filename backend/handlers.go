@@ -327,3 +327,200 @@ func getFromAddress(tx *types.Transaction) common.Address {
 	}
 	return from
 }
+
+// KaiaAnalyticsAI specific handlers
+
+// getKaiaNetworkStats handles requests for Kaia network statistics
+func (a *App) getKaiaNetworkStats(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	stats, err := a.dataCollector.GetKaiaNetworkStats(ctx)
+	if err != nil {
+		a.logger.WithError(err).Error("Failed to get Kaia network stats")
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "kaia_stats_failed",
+			Message: "Failed to retrieve Kaia network statistics",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}
+
+// getYieldAnalytics handles requests for yield farming analytics
+func (a *App) getYieldAnalytics(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	protocols := []string{"uniswap", "aave", "compound", "curve", "yearn"}
+	if protocolParam := c.Query("protocol"); protocolParam != "" {
+		protocols = []string{protocolParam}
+	}
+
+	yields, err := a.analyticsEngine.AnalyzeYieldOpportunities(ctx, protocols)
+	if err != nil {
+		a.logger.WithError(err).Error("Failed to analyze yield opportunities")
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "yield_analysis_failed",
+			Message: "Failed to analyze yield opportunities",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"yields": yields,
+		"count":  len(yields),
+	})
+}
+
+// getTradeAnalysis handles requests for trading analysis
+func (a *App) getTradeAnalysis(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	pair := c.Param("pair")
+	userAddress := c.Query("user")
+
+	optimization, err := a.analyticsEngine.OptimizeTradingStrategy(ctx, userAddress, pair)
+	if err != nil {
+		a.logger.WithError(err).Error("Failed to optimize trading strategy")
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "trade_analysis_failed",
+			Message: "Failed to analyze trading strategy",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, optimization)
+}
+
+// getGovernanceAnalysis handles requests for governance sentiment analysis
+func (a *App) getGovernanceAnalysis(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	proposalID := c.Param("proposalId")
+
+	sentiment, err := a.analyticsEngine.AnalyzeGovernanceSentiment(ctx, proposalID)
+	if err != nil {
+		a.logger.WithError(err).Error("Failed to analyze governance sentiment")
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "governance_analysis_failed",
+			Message: "Failed to analyze governance sentiment",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, sentiment)
+}
+
+// getTokenPrice handles requests for token price information
+func (a *App) getTokenPrice(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	symbol := c.Param("symbol")
+
+	price, err := a.dataCollector.GetTokenPrice(ctx, symbol)
+	if err != nil {
+		a.logger.WithError(err).Error("Failed to get token price")
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "price_fetch_failed",
+			Message: "Failed to retrieve token price",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, price)
+}
+
+// getHistoricalPrices handles requests for historical price data
+func (a *App) getHistoricalPrices(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	pair := c.Param("pair")
+	daysStr := c.DefaultQuery("days", "30")
+	
+	days, err := strconv.Atoi(daysStr)
+	if err != nil || days <= 0 || days > 365 {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "invalid_days",
+			Message: "Days parameter must be a positive integer between 1 and 365",
+		})
+		return
+	}
+
+	historicalData, err := a.dataCollector.GetHistoricalPrices(ctx, pair, days)
+	if err != nil {
+		a.logger.WithError(err).Error("Failed to get historical prices")
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "historical_data_failed",
+			Message: "Failed to retrieve historical price data",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"pair":  pair,
+		"days":  days,
+		"data":  historicalData,
+		"count": len(historicalData),
+	})
+}
+
+// processChatQuery handles chat query requests
+func (a *App) processChatQuery(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	var request struct {
+		UserID    string `json:"user_id" binding:"required"`
+		Query     string `json:"query" binding:"required"`
+		SessionID string `json:"session_id"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "invalid_request",
+			Message: "Invalid request format",
+		})
+		return
+	}
+
+	response, err := a.chatEngine.ProcessQuery(ctx, request.UserID, request.Query, request.SessionID)
+	if err != nil {
+		a.logger.WithError(err).Error("Failed to process chat query")
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "chat_processing_failed",
+			Message: "Failed to process chat query",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// getChatHistory handles requests for chat history
+func (a *App) getChatHistory(c *gin.Context) {
+	userID := c.Param("userId")
+	limitStr := c.DefaultQuery("limit", "20")
+	
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit <= 0 || limit > 100 {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "invalid_limit",
+			Message: "Limit parameter must be a positive integer between 1 and 100",
+		})
+		return
+	}
+
+	history := a.chatEngine.GetChatHistory(userID, limit)
+
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"user_id": userID,
+		"history": history,
+		"count":   len(history),
+	})
+}
