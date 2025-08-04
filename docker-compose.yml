@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: kaia-analytics-postgres
+    environment:
+      POSTGRES_DB: kaia_analytics
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - kaia-analytics
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: kaia-analytics-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - kaia-analytics
+
+  # Backend Services
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kaia-analytics-backend
+    environment:
+      - ENVIRONMENT=development
+      - PORT=8080
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/kaia_analytics?sslmode=disable
+      - REDIS_URL=redis://redis:6379
+      - KAIA_RPC_URL=https://rpc-testnet.kaia.io
+      - NETWORK_ID=1001
+      - LOG_LEVEL=debug
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend:/app
+      - /app/vendor
+    networks:
+      - kaia-analytics
+    restart: unless-stopped
+
+  # Frontend Dashboard
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: kaia-analytics-frontend
+    environment:
+      - REACT_APP_API_URL=http://localhost:8080/api/v1
+      - REACT_APP_WS_URL=ws://localhost:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - kaia-analytics
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  kaia-analytics:
+    driver: bridge
