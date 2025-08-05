@@ -10,12 +10,6 @@
       }
     }
   ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/$1"
-    }
-  ],
   "env": {
     "REACT_APP_API_URL": "https://api.kaia-analytics.com",
     "REACT_APP_WS_URL": "wss://ws.kaia-analytics.com",
