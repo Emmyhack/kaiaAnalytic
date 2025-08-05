@@ -30,11 +30,6 @@
     "REACT_APP_SUBSCRIPTION_CONTRACT_ADDRESS": "@react_app_subscription_contract_address",
     "REACT_APP_ACTION_CONTRACT_ADDRESS": "@react_app_action_contract_address"
   },
-  "functions": {
-    "frontend/build/static/**/*.js": {
-      "maxDuration": 10
-    }
-  },
   "headers": [
     {
       "source": "/(.*)",
