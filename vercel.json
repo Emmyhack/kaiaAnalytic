@@ -5,14 +5,14 @@
   "outputDirectory": "frontend/build",
   "installCommand": "echo 'Skipping root install'",
   "env": {
-    "REACT_APP_API_URL": "@react_app_api_url",
-    "REACT_APP_WS_URL": "@react_app_ws_url",
-    "REACT_APP_NETWORK_ID": "@react_app_network_id",
-    "REACT_APP_RPC_URL": "@react_app_rpc_url",
-    "REACT_APP_ANALYTICS_REGISTRY_ADDRESS": "@react_app_analytics_registry_address",
-    "REACT_APP_DATA_CONTRACT_ADDRESS": "@react_app_data_contract_address",
-    "REACT_APP_SUBSCRIPTION_CONTRACT_ADDRESS": "@react_app_subscription_contract_address",
-    "REACT_APP_ACTION_CONTRACT_ADDRESS": "@react_app_action_contract_address"
+    "REACT_APP_API_URL": "https://api.kaia-analytics.com",
+    "REACT_APP_WS_URL": "wss://ws.kaia-analytics.com",
+    "REACT_APP_NETWORK_ID": "8217",
+    "REACT_APP_RPC_URL": "https://kaia-mainnet.blockpi.network/v1/rpc/public",
+    "REACT_APP_ANALYTICS_REGISTRY_ADDRESS": "0x0000000000000000000000000000000000000000",
+    "REACT_APP_DATA_CONTRACT_ADDRESS": "0x0000000000000000000000000000000000000000",
+    "REACT_APP_SUBSCRIPTION_CONTRACT_ADDRESS": "0x0000000000000000000000000000000000000000",
+    "REACT_APP_ACTION_CONTRACT_ADDRESS": "0x0000000000000000000000000000000000000000"
   },
   "headers": [
     {
