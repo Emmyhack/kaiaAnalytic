@@ -15,4 +15,5 @@ export default defineConfig({
   define: {
     'process.env': {},
   },
+  envPrefix: 'REACT_APP_',
 });

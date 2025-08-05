@@ -9,16 +9,19 @@ const injected = injectedModule();
 const walletConnect = walletConnectModule();
 const ledger = ledgerModule();
 
+// Environment variables with proper fallbacks
+const NETWORK_ID = import.meta.env.VITE_REACT_APP_NETWORK_ID || '8217';
+const RPC_URL = import.meta.env.VITE_REACT_APP_RPC_URL || 'https://kaia-mainnet.blockpi.network/v1/rpc/public';
+
 const onboard = Onboard({
   wallets: [injected, walletConnect, ledger],
   chains: [
     {
-      id: process.env.REACT_APP_NETWORK_ID || '0x1',
-      token: 'ETH',
-      label: 'Ethereum',
-      rpcUrl: process.env.REACT_APP_RPC_URL || 'https://mainnet.infura.io/v3/YOUR_PROJECT_ID',
+      id: NETWORK_ID,
+      token: 'KAIA',
+      label: 'Kaia Mainnet',
+      rpcUrl: RPC_URL,
     },
-    // Add Kairos or other chains here
   ],
   appMetadata: {
     name: 'KaiaAnalyticsAI',
@@ -48,42 +51,66 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
   const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
-    const previouslyConnectedWallets = onboard.state.get().wallets;
-    if (previouslyConnectedWallets.length > 0) {
-      onboard.connectWallet();
-    }
-    const unsubscribe = onboard.state.select('wallets').subscribe(wallets => {
-      if (wallets && wallets.length > 0) {
-        setAddress(wallets[0].accounts[0].address);
-        setProvider(new ethers.BrowserProvider(wallets[0].provider, 'any'));
+    // Subscribe to wallet updates
+    const wallets = onboard.state.select('wallets');
+    
+    const { unsubscribe } = wallets.subscribe(wallets => {
+      if (wallets[0]) {
+        setAddress(wallets[0].accounts[0]?.address || null);
+        
+        if (wallets[0].provider) {
+          setProvider(new ethers.BrowserProvider(wallets[0].provider));
+        }
       } else {
         setAddress(null);
         setProvider(null);
       }
     });
+
     return () => unsubscribe();
   }, []);
 
   const connect = async () => {
-    setConnecting(true);
-    await onboard.connectWallet();
-    setConnecting(false);
-  };
-
-  const disconnect = async () => {
-    const [primary] = onboard.state.get().wallets;
-    if (primary) {
-      await onboard.disconnectWallet({ label: primary.label });
+    try {
+      setConnecting(true);
+      await onboard.connectWallet();
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+    } finally {
+      setConnecting(false);
     }
   };
 
-  const value = useMemo(() => ({ address, provider, onboard, connecting, connect, disconnect }), [address, provider, connecting]);
+  const disconnect = async () => {
+    const [primaryWallet] = onboard.state.get().wallets;
+    if (primaryWallet) {
+      await onboard.disconnectWallet({ label: primaryWallet.label });
+    }
+  };
 
-  return <Web3Context.Provider value={value}>{children}</Web3Context.Provider>;
+  const value = useMemo(
+    () => ({
+      address,
+      provider,
+      onboard,
+      connecting,
+      connect,
+      disconnect,
+    }),
+    [address, provider, connecting]
+  );
+
+  return (
+    <Web3Context.Provider value={value}>
+      {children}
+    </Web3Context.Provider>
+  );
 };
 
 export const useWeb3 = () => {
-  const ctx = useContext(Web3Context);
-  if (!ctx) throw new Error('useWeb3 must be used within a Web3Provider');
-  return ctx;
+  const context = useContext(Web3Context);
+  if (context === undefined) {
+    throw new Error('useWeb3 must be used within a Web3Provider');
+  }
+  return context;
 };
