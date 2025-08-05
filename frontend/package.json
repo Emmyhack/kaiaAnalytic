@@ -25,24 +25,22 @@
     "react": "^19.1.1",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "^19.1.1",
-    "react-scripts": "5.0.1",
     "recharts": "^3.1.0",
     "typescript": "^5.4.5",
     "viem": "^2.33.2",
     "wagmi": "^2.16.1",
     "web-vitals": "^2.1.4"
   },
-  "scripts": {
-    "start": "craco start",
-    "build": "craco build",
-    "test": "craco test",
-    "eject": "react-scripts eject"
+  "devDependencies": {
+    "tailwindcss": "^4.1.11",
+    "vite": "^5.2.0",
+    "@vitejs/plugin-react": "^4.2.1"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "echo 'Use Vitest or Jest for testing.'"
   },
   "browserslist": {
     "production": [
@@ -55,9 +53,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {
-    "@craco/craco": "^7.1.0",
-    "tailwindcss": "^4.1.11"
   }
 }
