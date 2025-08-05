@@ -5,6 +5,7 @@ import SearchBar from './components/SearchBar';
 import NetworkStats from './components/NetworkStats';
 import SearchResults from './components/SearchResults';
 import PortfolioTracker from './components/PortfolioTracker';
+import WalletSelector from './components/WalletSelector';
 import { 
   apiService, 
   BlockResponse, 
@@ -79,6 +80,9 @@ function App() {
     <Web3Provider>
       <div className="min-h-screen bg-secondary-50">
         <Header />
+        <div className="flex justify-end p-4">
+          <WalletSelector />
+        </div>
         
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Hero Section */}
