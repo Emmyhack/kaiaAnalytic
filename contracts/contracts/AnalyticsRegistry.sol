@@ -88,6 +88,7 @@ contract AnalyticsRegistry is Ownable, ReentrancyGuard {
      * @param _registrationFee The initial registration fee for tasks
      */
     constructor(uint256 _registrationFee) {
+        require(_registrationFee > 0, "Registration fee must be greater than 0");
         registrationFee = _registrationFee;
     }
     

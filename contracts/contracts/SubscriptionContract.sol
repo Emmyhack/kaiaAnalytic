@@ -125,12 +125,16 @@ contract SubscriptionContract is Ownable, ReentrancyGuard {
     
     /// @dev Thrown when trying to cancel a non-existent subscription
     error CannotCancelSubscription();
+    
+    /// @dev Thrown when caller is not authorized
+    error NotAuthorized();
 
     /**
      * @notice Creates a new SubscriptionContract
      * @param _kaiaToken The address of the KAIA token contract
      */
     constructor(address _kaiaToken) {
+        require(_kaiaToken != address(0), "Invalid token address");
         kaiaToken = IERC20(_kaiaToken);
     }
     
