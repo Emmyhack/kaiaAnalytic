@@ -1,25 +1,9 @@
 {
   "version": 2,
   "name": "kaia-analytics-ai",
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/$1"
-    }
-  ],
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/build",
+  "installCommand": "echo 'Skipping root install'",
   "env": {
     "REACT_APP_API_URL": "@react_app_api_url",
     "REACT_APP_WS_URL": "@react_app_ws_url",
